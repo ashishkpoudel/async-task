@@ -1,4 +1,8 @@
-# task-runner (Not ready for Production use)
+# task-runner
+
+```
+Status: Experimental
+```
 
 Library for retry, control concurrency of async operations.
 
