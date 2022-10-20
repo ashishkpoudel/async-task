@@ -1,4 +1,8 @@
 {
+  "compilerOptions": {
+    "allowJs": true,
+  },
   "files": [],
+  "exclude": ["dist","node_modules"],
   "references": [{ "path": "packages/retry" }]
 }
