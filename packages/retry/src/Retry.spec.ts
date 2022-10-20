@@ -1,4 +1,4 @@
-import { retry } from './Retry';
+import { policy } from './Retry';
 import { fixedBackoffStrategy, linearBackoffStrategy, exponentialBackoffStrategy } from './utils/backoff';
 import { RetryAbortedError } from './RetryAbortedError';
 import { RetryFailedError } from './RetryFailedError';
@@ -14,7 +14,11 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const taskSpy = jest.spyOn(task, 'fails');
 
-    await expect(retry(() => task.fails(), { attempts: 5 })).rejects.toThrow(RetryFailedError);
+    const retry = policy.config({
+      maxAttempts: 5,
+    });
+
+    await expect(retry.run(() => task.fails())).rejects.toThrow(RetryFailedError);
 
     expect(taskSpy).toHaveBeenCalledTimes(5);
   });
@@ -23,7 +27,11 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const taskSpy = jest.spyOn(task, 'abortAfterFailed');
 
-    await expect(retry(() => task.abortAfterFailed(3), { attempts: 5 })).rejects.toThrow(RetryAbortedError);
+    const retry = policy.config({
+      maxAttempts: 5,
+    });
+
+    await expect(retry.run(() => task.abortAfterFailed(3))).rejects.toThrow(RetryAbortedError);
 
     expect(taskSpy).toHaveBeenCalledTimes(3);
     expect(task.abortAfterFailedCount).toEqual(3);
@@ -34,7 +42,12 @@ describe('Retry Task', () => {
       setTimeout(() => resolve('random task..'), 15);
     });
 
-    await expect(retry(() => task, { attempts: 1, timeout: 1 })).rejects.toThrow(RetryTimeoutError);
+    const retry = policy.config({
+      maxAttempts: 1,
+      timeout: 1,
+    });
+
+    await expect(retry.run(() => task)).rejects.toThrow(RetryTimeoutError);
   });
 
   it('should result in sucessful execution when task is resolved before timeout', async () => {
@@ -42,7 +55,12 @@ describe('Retry Task', () => {
       setTimeout(() => resolve('random task..'), 14);
     });
 
-    const result = await retry(() => task, { attempts: 1, timeout: 15 });
+    const retry = policy.config({
+      maxAttempts: 1,
+      timeout: 15,
+    });
+
+    const result = await retry.run(() => task);
 
     expect(result).toEqual('random task..');
   });
@@ -51,7 +69,11 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    await expect(retry(() => task.fails(), { attempts: 2 })).rejects.toThrow(RetryFailedError);
+    const retry = policy.config({
+      maxAttempts: 2,
+    });
+
+    await expect(retry.run(() => task.fails())).rejects.toThrow(RetryFailedError);
 
     expect(timeoutSpy).toHaveBeenNthCalledWith(1, expect.any(Function), 100);
   });
@@ -60,9 +82,12 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    await expect(
-      retry(() => task.fails(), { attempts: 3, backoff: fixedBackoffStrategy({ delay: 300, maxDelay: 1000 }) })
-    ).rejects.toThrow(RetryFailedError);
+    const retry = policy.config({
+      maxAttempts: 3,
+      backoff: fixedBackoffStrategy({ delay: 300, maxDelay: 1000 }),
+    });
+
+    await expect(retry.run(() => task.fails())).rejects.toThrow(RetryFailedError);
 
     expect(timeoutSpy).toHaveBeenNthCalledWith(1, expect.any(Function), 300);
     expect(timeoutSpy).toHaveBeenNthCalledWith(2, expect.any(Function), 300);
@@ -72,9 +97,12 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    await expect(
-      retry(() => task.fails(), { attempts: 3, backoff: linearBackoffStrategy({ delay: 100, maxDelay: 3000 }) })
-    ).rejects.toThrow(RetryFailedError);
+    const retry = policy.config({
+      maxAttempts: 3,
+      backoff: linearBackoffStrategy({ delay: 100, maxDelay: 3000 }),
+    });
+
+    await expect(retry.run(() => task.fails())).rejects.toThrow(RetryFailedError);
 
     expect(timeoutSpy).toHaveBeenNthCalledWith(1, expect.any(Function), 100);
     expect(timeoutSpy).toHaveBeenNthCalledWith(2, expect.any(Function), 200);
@@ -84,9 +112,12 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    await expect(
-      retry(() => task.fails(), { attempts: 3, backoff: exponentialBackoffStrategy({ delay: 20, maxDelay: 3000 }) })
-    ).rejects.toThrow(RetryFailedError);
+    const retry = policy.config({
+      maxAttempts: 3,
+      backoff: exponentialBackoffStrategy({ delay: 20, maxDelay: 3000 }),
+    });
+
+    await expect(retry.run(() => task.fails())).rejects.toThrow(RetryFailedError);
 
     expect(timeoutSpy).toHaveBeenNthCalledWith(1, expect.any(Function), 20);
     expect(timeoutSpy).toHaveBeenNthCalledWith(2, expect.any(Function), 80);

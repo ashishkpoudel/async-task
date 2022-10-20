@@ -6,32 +6,29 @@ import { fixedBackoffStrategy } from './utils/backoff';
 import { RetryAbortedError } from './RetryAbortedError';
 import { RetryFailedError } from './RetryFailedError';
 
-export const retry: <T>(fn: () => Promise<T>, options: RetryOptions) => Promise<T> = (fn, options) => {
-  return new Retry(options).retry(fn);
+export const policy = {
+  config: (options: Partial<RetryOptions>) => {
+    return new Retry(options);
+  },
 };
 
 class Retry {
-  constructor(private readonly options: RetryOptions) {}
+  private options: RetryOptions = {
+    maxAttempts: 1,
+    backoff: fixedBackoffStrategy({ delay: 100, maxDelay: 32 * 1000 }),
+    jitter: 'none',
+    timeout: 0,
+  };
 
-  private get _timeout() {
-    return this.options?.timeout || 0;
+  constructor(options: Partial<RetryOptions>) {
+    this.options = { ...this.options, ...options };
   }
 
-  private get _attempts() {
-    return this.options.attempts;
-  }
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    const { maxAttempts, jitter, backoff, timeout } = this.options;
 
-  private get _backoff() {
-    return this.options?.backoff || fixedBackoffStrategy({ delay: 100, maxDelay: 32 * 1000 });
-  }
-
-  private get _jitter() {
-    return this.options?.jitter || 'none';
-  }
-
-  async retry<T>(fn: () => Promise<T>): Promise<T> {
     const task = async () => {
-      for (let attempt = 1; attempt <= this._attempts; attempt++) {
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
           return await fn();
         } catch (error) {
@@ -39,11 +36,11 @@ class Retry {
             throw error;
           }
 
-          if (isRetryable(attempt, this._attempts)) {
+          if (isRetryable(attempt, maxAttempts)) {
             await waitFor(
-              this._backoff({
+              backoff({
                 attempt,
-                jitter: this._jitter,
+                jitter,
               } as BackoffStrategyContext)
             );
           }
@@ -53,6 +50,6 @@ class Retry {
       throw new RetryFailedError('Task retry failed.');
     };
 
-    return applyTimeout(task, this._timeout);
+    return applyTimeout(task, timeout);
   }
 }

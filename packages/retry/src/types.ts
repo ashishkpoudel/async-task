@@ -1,10 +1,10 @@
 export type Jitter = 'full' | 'none';
 
 export interface RetryOptions {
-  readonly attempts: number;
-  readonly timeout?: number;
-  readonly backoff?: (...props: any[]) => number;
-  readonly jitter?: Jitter;
+  readonly maxAttempts: number;
+  readonly timeout: number;
+  readonly backoff: (...props: any[]) => number;
+  readonly jitter: Jitter;
 }
 
 export interface BackoffStrategyContext {
