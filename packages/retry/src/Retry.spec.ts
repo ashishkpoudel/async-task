@@ -1,4 +1,4 @@
-import { policy } from './Retry';
+import { retryPolicy } from './Retry';
 import { fixedBackoffStrategy, linearBackoffStrategy, exponentialBackoffStrategy } from './utils/backoff';
 import { RetryAbortedError } from './RetryAbortedError';
 import { RetryFailedError } from './RetryFailedError';
@@ -14,7 +14,7 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const taskSpy = jest.spyOn(task, 'fails');
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 5,
     });
 
@@ -27,7 +27,7 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const taskSpy = jest.spyOn(task, 'abortAfterFailed');
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 5,
     });
 
@@ -42,7 +42,7 @@ describe('Retry Task', () => {
       setTimeout(() => resolve('random task..'), 15);
     });
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 1,
       timeout: 1,
     });
@@ -55,7 +55,7 @@ describe('Retry Task', () => {
       setTimeout(() => resolve('random task..'), 14);
     });
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 1,
       timeout: 15,
     });
@@ -69,7 +69,7 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 2,
     });
 
@@ -82,7 +82,7 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 3,
       backoff: fixedBackoffStrategy({ delay: 300, maxDelay: 1000 }),
     });
@@ -97,7 +97,7 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 3,
       backoff: linearBackoffStrategy({ delay: 100, maxDelay: 3000 }),
     });
@@ -112,7 +112,7 @@ describe('Retry Task', () => {
     const task = new TaskStub();
     const timeoutSpy = jest.spyOn(global, 'setTimeout');
 
-    const retry = policy.config({
+    const retry = retryPolicy.config({
       maxAttempts: 3,
       backoff: exponentialBackoffStrategy({ delay: 20, maxDelay: 3000 }),
     });

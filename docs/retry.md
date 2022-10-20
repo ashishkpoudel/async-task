@@ -5,13 +5,19 @@ Utility to retry async operations.
 ## Installation
 
 ```
-npm install @task-runner/retry
+npm install @async-task/retry
 ```
 
 ## Usage
 
 ```
-import { retry, fixedBackoffStrategy } from '@task-runner/retry'
+import { retryPolicy, fixedBackoffStrategy } from '@task-runner/retry'
+
+const retry = retryPolicy.config({
+  attempts: 3,
+  timeout: 10000,
+  backoff: fixedBackoffStrategy({ delay: 200, maxDelay: 5000}),
+});
 
 const task = () => {
   return fetch('https://example.com/data');
@@ -19,11 +25,7 @@ const task = () => {
 
 const main = async () => {
   try {
-    const result = await retry(() => task, {
-      attempts: 3,
-      timeout: 10000,
-      backoff: fixedBackoffStrategy({ delay: 200, maxDelay: 5000})
-    });
+    const result = retry.run(task);
 
     // handle result
   } catch (error) {

@@ -6,7 +6,7 @@ import { fixedBackoffStrategy } from './utils/backoff';
 import { RetryAbortedError } from './RetryAbortedError';
 import { RetryFailedError } from './RetryFailedError';
 
-export const policy = {
+export const retryPolicy = {
   config: (options: Partial<RetryOptions>) => {
     return new Retry(options);
   },
